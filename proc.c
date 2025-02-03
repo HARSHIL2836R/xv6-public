@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "processInfo.h"
 
 struct {
   struct spinlock lock;
@@ -88,6 +89,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->context_switches = 1;
 
   release(&ptable.lock);
 
@@ -344,6 +346,7 @@ scheduler(void)
       p->state = RUNNING;
 
       swtch(&(c->scheduler), p->context);
+      p->context_switches++;
       switchkvm();
 
       // Process is done running for now.
@@ -531,4 +534,72 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+//Custom functions
+int
+getNumProc(void)
+{
+  struct proc *p;
+  int count = 0;
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    if (!p) continue;
+    else if(
+      (p->state == EMBRYO) |
+    (p->state == RUNNING) |
+    (p->state == RUNNABLE) |
+    (p->state == SLEEPING) |
+    (p->state == ZOMBIE)
+    )
+      count++;
+  release(&ptable.lock);
+
+  return count;
+}
+
+int
+getMaxPid(void)
+{
+  struct proc *p;
+  int max_pid = 0;
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+    if (!p) 
+      continue;
+    else if (
+    (p->state == EMBRYO) |
+    (p->state == RUNNING) |
+    (p->state == RUNNABLE) |
+    (p->state == SLEEPING) |
+    (p->state == ZOMBIE)
+    // p->state == EMBRYO || RUNNING || RUNNABLE || SLEEPING || ZOMBIE
+    )
+    {
+      if (p->pid > max_pid) max_pid = p->pid;
+    }
+  release(&ptable.lock);
+
+  return max_pid;
+}
+
+void
+getProcInfo(int pid, struct processInfo* pinfo)
+{ 
+  struct proc *p;
+
+  acquire(&ptable.lock);
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if (!p) 
+      continue;
+    if (p->pid == pid)
+    {
+      pinfo->ppid = p->parent->pid;
+      pinfo->psize = p->sz;
+      pinfo->numberContextSwitches = p->context_switches;
+    }
+    }
+  release(&ptable.lock);
 }

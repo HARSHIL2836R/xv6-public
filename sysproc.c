@@ -89,3 +89,30 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// Custom Calls
+int
+sys_getNumProc(void)
+{
+  return getNumProc();
+}
+
+int
+sys_getMaxPid(void)
+{
+  return getMaxPid();
+}
+
+int
+sys_getProcInfo(void)
+{
+  int pid;
+  struct processInfo* pinfo;
+  
+  if (argint(0,&pid)< 0)
+    return -1;
+  if (argptr(1,(char **)&pinfo,sizeof pinfo)<0)
+    return -1;
+  getProcInfo(pid, pinfo);
+  return 0;
+}
