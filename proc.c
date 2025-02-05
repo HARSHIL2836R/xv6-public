@@ -90,6 +90,7 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   p->context_switches = 1;
+  p->pr = 1000; // Initial Priority is full
 
   release(&ptable.lock);
 
@@ -345,8 +346,8 @@ scheduler(void)
       switchuvm(p);
       p->state = RUNNING;
 
-      swtch(&(c->scheduler), p->context);
       p->context_switches++;
+      swtch(&(c->scheduler), p->context);
       switchkvm();
 
       // Process is done running for now.
