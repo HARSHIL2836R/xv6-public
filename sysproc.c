@@ -113,6 +113,22 @@ sys_getProcInfo(void)
     return -1;
   if (argptr(1,(char **)&pinfo,sizeof pinfo)<0)
     return -1;
-  getProcInfo(pid, pinfo);
-  return 0;
+  else
+    return getProcInfo(pid, pinfo);
+}
+
+int
+sys_setprio(void)
+{
+  int pr;
+  if (argint(0,&pr)< 0)
+    return -1;
+  else
+    return setprio(pr);
+}
+
+int
+sys_getprio(void)
+{
+  return myproc()->pr;
 }

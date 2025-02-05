@@ -585,7 +585,7 @@ getMaxPid(void)
   return max_pid;
 }
 
-void
+int
 getProcInfo(int pid, struct processInfo* pinfo)
 { 
   struct proc *p;
@@ -596,10 +596,20 @@ getProcInfo(int pid, struct processInfo* pinfo)
       continue;
     if (p->pid == pid)
     {
-      pinfo->ppid = p->parent->pid;
+      if (pid!=1) pinfo->ppid = p->parent->pid;
+      else pinfo->ppid = (int)'\0';
       pinfo->psize = p->sz;
       pinfo->numberContextSwitches = p->context_switches;
     }
     }
   release(&ptable.lock);
+  return 0;
+}
+
+int 
+setprio(int pr)
+{
+  struct proc* currproc = myproc();
+  currproc->pr = pr;
+  return 0;
 }
