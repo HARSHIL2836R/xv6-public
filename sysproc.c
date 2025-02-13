@@ -132,3 +132,26 @@ sys_getprio(void)
 {
   return myproc()->pr;
 }
+
+int
+sys_welcomeFunction(void)
+{
+  void (*welcome)(void);
+  if (argptr(1,(char **)&welcome,sizeof welcome)<0)
+    return -1;
+  else{
+    cprintf("Welcome function set\n");
+      myproc()->welcomeFnAdd = welcome;
+      myproc()->use_welcome = 1;
+    }
+  return 0;
+}
+
+int
+sys_welcomeDone(void)
+{
+  myproc()->tf->eip = myproc()->welcome_ret_eip;
+  // myproc()->context->eip = myproc()->welcome_ret_eip;
+  myproc()->use_welcome = 0;
+  return 0;
+}

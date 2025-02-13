@@ -28,3 +28,5 @@
 #define SYS_getProcInfo 26
 #define SYS_setprio 27
 #define SYS_getprio 28
+#define SYS_welcomeFunction 29
+#define SYS_welcomeDone 30

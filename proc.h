@@ -1,3 +1,5 @@
+#define MAX_PRIORITY 1000
+
 // Per-CPU state
 struct cpu {
   uchar apicid;                // Local APIC ID
@@ -28,8 +30,8 @@ struct context {
   uint edi;
   uint esi;
   uint ebx;
-  uint ebp;
-  uint eip;
+  uint ebp; // Stack base pointer
+  uint eip; // Instruction pointer
 };
 
 enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
@@ -52,6 +54,10 @@ struct proc {
   //Custom
   int context_switches;        // Number of contexts switches into the process
   uint pr;                     // Priority
+  uint time_units_left;        // Time units left to run based on priority
+  uint use_welcome;            // Flag to check if welcome function is used
+  void (*welcomeFnAdd)(void);       // Function pointer to welcome function
+  uint welcome_ret_eip; // Trapframe to return to after welcome function
 };
 
 // Process memory is laid out contiguously, low addresses first:

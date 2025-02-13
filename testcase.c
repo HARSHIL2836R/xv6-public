@@ -1,12 +1,40 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
-#include "processInfo.h"
-int main(void)
+
+void welcome(void)
 {
-    for(int i=1; i<10; i++){
-        setprio(i);
-        printf(1, "Priority : %d\n", getprio());
+  printf(1, "I am child in welcome function\n");
+  welcomeDone();
+}
+
+int main(int argc, char *argv[])
+{
+
+  int ret1 = fork();
+  if(ret1 == 0)
+    {
+      printf(1, "I am child with no welcome\n"); 
     }
-    exit();
+  else if (ret1 > 0)
+    {
+      wait();
+      printf(1, "Parent reaped first child\n");
+     
+      welcomeFunction(&welcome);
+      
+      int ret2 = fork();
+      if (ret2 == 0)
+	{
+	  printf(1, "I have returned from welcome function\n");
+	  exit();
+	}
+      else if (ret2 > 0)
+	{
+	  wait();
+	  printf(1, "Parent reaped second child\n");
+	}
+    }
+  
+  exit();
 }

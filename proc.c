@@ -90,7 +90,9 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   p->context_switches = 1;
-  p->pr = 1000; // Initial Priority is full
+  p->pr = 100; // Initial Priority is least
+  p->time_units_left = 1; // Initial time units left is 1
+  p->use_welcome = 0; // Initial welcome function is NULL
 
   release(&ptable.lock);
 
@@ -206,6 +208,11 @@ fork(void)
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
 
+  if (myproc()->use_welcome == 1){
+    np->welcome_ret_eip = np->tf->eip;
+    np->tf->eip = (uint)myproc()->welcomeFnAdd;
+  }
+  
   for(i = 0; i < NOFILE; i++)
     if(curproc->ofile[i])
       np->ofile[i] = filedup(curproc->ofile[i]);
@@ -216,7 +223,6 @@ fork(void)
   pid = np->pid;
 
   acquire(&ptable.lock);
-
   np->state = RUNNABLE;
 
   release(&ptable.lock);
@@ -338,21 +344,26 @@ scheduler(void)
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
+      // p->time_units_left = (uint) 10*(p->pr/MAX_PRIORITY); // 1000 is max value of priority
+      while (p->state == RUNNABLE && p->time_units_left > 0) {
+        
+        // Switch to chosen process.  It is the process's job
+        // to release ptable.lock and then reacquire it
+        // before jumping back to us.
+        c->proc = p;
+        switchuvm(p);
+        p->state = RUNNING;
 
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
+        p->context_switches++;
+        swtch(&(c->scheduler), p->context);
+        switchkvm();
 
-      p->context_switches++;
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        c->proc = 0;
+        p->time_units_left--;
+      }
+      p->time_units_left += 1 + 100 * (p->pr/1000);
     }
     release(&ptable.lock);
 
@@ -612,5 +623,6 @@ setprio(int pr)
 {
   struct proc* currproc = myproc();
   currproc->pr = pr;
+  currproc->time_units_left = 1+ (uint) 100*(pr/MAX_PRIORITY);
   return 0;
 }

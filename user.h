@@ -33,6 +33,9 @@ int getProcInfo(int, struct processInfo*);
 //B
 void setprio(int);
 int getprio(void);
+//C
+void welcomeFunction(void (*welcome)(void));
+void welcomeDone(void);
 
 // ulib.c
 int stat(const char*, struct stat*);
